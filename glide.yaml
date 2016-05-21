@@ -1,0 +1,6 @@
+package: github.com/sevein/nfdmp2rds
+import:
+- package: github.com/garyburd/redigo
+- package: github.com/pquerna/ffjson
+  subpackages:
+  - ffjson
