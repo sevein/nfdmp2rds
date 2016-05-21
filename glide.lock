@@ -1,0 +1,13 @@
+hash: 82aafbf966fcb8406bf54690a2fe0f69410a6709eddc4e83e1b1cb9a723c893e
+updated: 2016-05-21T11:58:01.189264277-07:00
+imports:
+- name: github.com/garyburd/redigo
+  version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
+  subpackages:
+  - redis
+  - internal
+- name: github.com/pquerna/ffjson
+  version: fa49a9f5832ba121db144795c147fe8449124aeb
+  subpackages:
+  - ffjson
+devImports: []
