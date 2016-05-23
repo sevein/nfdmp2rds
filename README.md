@@ -47,3 +47,26 @@ Flags (options):
   -workers int
         Number of workers (default 2)
 ```
+
+### Schema
+
+```json
+{
+    "first_switched": "2016-05-16T19:10:29Z",
+    "geoip_dst": {
+        "iso_code": "ES"
+    },
+    "geoip_src": {
+        "iso_code": "CA"
+    },
+    "host": "different.hostname.tld",
+    "in_bytes": "99",
+    "in_pkts": "2",
+    "ipv4_dst_addr": "217.12.24.33",
+    "ipv4_src_addr": "142.58.103.21",
+    "l4_dst_port": "11482",
+    "l4_src_port": "179",
+    "last_switched": "2016-05-16T19:10:34Z",
+    "protocol": "6"
+}
+```
