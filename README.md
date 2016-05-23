@@ -2,7 +2,7 @@
 
 ### Installation
 
-Binaries are not available. [Install Go](https://golang.org/doc/install) set your `GOPATH` and run the following:
+Binaries are not available. [Install Go 1.6+](https://golang.org/doc/install), set your `GOPATH` and run the following:
 
     $ go get -u github.com/sevein/nfdmp2rds
 
