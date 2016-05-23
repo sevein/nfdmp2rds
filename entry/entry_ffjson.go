@@ -44,6 +44,8 @@ func (mj *NfdumpEntry) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(mj.Ipv4DstAddr))
 	buf.WriteString(`,"protocol":`)
 	fflib.WriteJsonString(buf, string(mj.Protocol))
+	buf.WriteString(`,"l4_src_port":`)
+	fflib.WriteJsonString(buf, string(mj.L4SrcPort))
 	buf.WriteString(`,"l4_dst_port":`)
 	fflib.WriteJsonString(buf, string(mj.L4DstPort))
 	buf.WriteString(`,"first_switched":`)
@@ -70,6 +72,8 @@ const (
 
 	ffj_t_NfdumpEntry_Protocol
 
+	ffj_t_NfdumpEntry_L4SrcPort
+
 	ffj_t_NfdumpEntry_L4DstPort
 
 	ffj_t_NfdumpEntry_FirstSwitched
@@ -88,6 +92,8 @@ var ffj_key_NfdumpEntry_Ipv4SrcAddr = []byte("ipv4_src_addr")
 var ffj_key_NfdumpEntry_Ipv4DstAddr = []byte("ipv4_dst_addr")
 
 var ffj_key_NfdumpEntry_Protocol = []byte("protocol")
+
+var ffj_key_NfdumpEntry_L4SrcPort = []byte("l4_src_port")
 
 var ffj_key_NfdumpEntry_L4DstPort = []byte("l4_dst_port")
 
@@ -195,7 +201,12 @@ mainparse:
 
 				case 'l':
 
-					if bytes.Equal(ffj_key_NfdumpEntry_L4DstPort, kn) {
+					if bytes.Equal(ffj_key_NfdumpEntry_L4SrcPort, kn) {
+						currentKey = ffj_t_NfdumpEntry_L4SrcPort
+						state = fflib.FFParse_want_colon
+						goto mainparse
+
+					} else if bytes.Equal(ffj_key_NfdumpEntry_L4DstPort, kn) {
 						currentKey = ffj_t_NfdumpEntry_L4DstPort
 						state = fflib.FFParse_want_colon
 						goto mainparse
@@ -230,6 +241,12 @@ mainparse:
 
 				if fflib.EqualFoldRight(ffj_key_NfdumpEntry_L4DstPort, kn) {
 					currentKey = ffj_t_NfdumpEntry_L4DstPort
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_NfdumpEntry_L4SrcPort, kn) {
+					currentKey = ffj_t_NfdumpEntry_L4SrcPort
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -304,6 +321,9 @@ mainparse:
 
 				case ffj_t_NfdumpEntry_Protocol:
 					goto handle_Protocol
+
+				case ffj_t_NfdumpEntry_L4SrcPort:
+					goto handle_L4SrcPort
 
 				case ffj_t_NfdumpEntry_L4DstPort:
 					goto handle_L4DstPort
@@ -477,6 +497,32 @@ handle_Protocol:
 			outBuf := fs.Output.Bytes()
 
 			uj.Protocol = string(string(outBuf))
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_L4SrcPort:
+
+	/* handler: uj.L4SrcPort type=string kind=string quoted=false*/
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			outBuf := fs.Output.Bytes()
+
+			uj.L4SrcPort = string(string(outBuf))
 
 		}
 	}

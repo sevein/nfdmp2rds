@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -15,71 +16,76 @@ import (
 )
 
 var (
-	redisServer   = flag.String("redisServer", ":6379", "Redis server")
-	redisPassword = flag.String("redisPassword", "", "Redis password")
-	redisListKey  = flag.String("redisListKey", "", "Key of the list")
-	verbose       = flag.Bool("v", false, "Verbose mode")
-	batchSize     = flag.Int("bsize", 5, "Batch size")
-
-	cpuprofile = flag.String("cpuprofile", "", "Write CPU profile to file")
-	workers    = flag.Int("workers", 2, "Number of workers")
+	logger = log.New(os.Stderr, "", 0)
+	pool   *redis.Pool
 )
 
-var logger = log.New(os.Stderr, "", 0)
+var (
+	redisServer   = flag.String("redisServer", ":6379", "Redis server")
+	redisPassword = flag.String("redisPassword", "", "Redis password")
+	batchSize     = flag.Int("bsize", 5, "Batch size")
+	hostname      = flag.String("hostname", "localhost", "Given hostname")
+	cpuprofile    = flag.String("cpuprofile", "", "Write CPU profile to file")
+	flush         = flag.Bool("flush", false, "Delete key ")
+	workers       = flag.Int("workers", 2, "Number of workers")
+	verbose       = flag.Bool("v", false, "Verbose mode")
+	help          = flag.Bool("h", false, "Print command usage help")
+)
 
 func main() {
 	flag.Usage = usage
 	flag.Parse()
 	args := flag.Args()
-	if len(args) == 0 {
+	if *help || len(args) != 2 {
 		flag.Usage()
 		os.Exit(1)
 	}
+	redisListKey := args[0]
+	input := args[1]
 
+	// Set hostname
+	if *hostname != "" {
+		entry.Hostname = *hostname
+	}
+
+	// Enable CPU profiling
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
-	pool := pool(*redisServer, *redisPassword)
+	// Create pool of redis connections. We are using just one connection for
+	// now but I am hoping to eventually support multiple workers.
+	pool = newPool(*redisServer, *redisPassword)
 	defer pool.Close()
-
-	// One connection to redis for now
 	conn := pool.Get()
 	defer conn.Close()
 
-	input := args[0]
+	// Open file or pipe
+	file, err := openFile(input)
+	if err != nil {
+		logger.Fatalf("Error encountered while reading input: %s.", err)
+	}
 
-	var file *os.File
-	var err error
-	if input == "-" {
-		// Discard stdin if it's connected to a terminal. We want it to be
-		// connected to a pipe or a file.
-		info, err := os.Stdin.Stat()
-		if err != nil {
-			logger.Fatalln("Error encountered while reading stdin", err)
+	// Delete existing list
+	if *flush {
+		if err := delKey(pool, redisListKey); err != nil {
+			logger.Fatalf("Key \"%s\" could not be deleted: %s.", redisListKey, err)
 		}
-		if (info.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
-			logger.Fatalln("stdin must be a pipe or a file")
-		}
-		file = os.Stdin
-	} else {
-		file, err = os.Open(input)
-		if err != nil {
-			logger.Fatalln("Error encountered while reading file", err)
-		}
-		defer file.Close()
+		logger.Printf("Key \"%s\" has been deleted.", redisListKey)
 	}
 
 	i := -1
+	success := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		e, err := entry.NewNfdumpEntry(scanner.Text())
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		j, err := e.MarshalJSON()
@@ -87,27 +93,36 @@ func main() {
 			continue
 		}
 		if err := conn.Send("RPUSH", redisListKey, string(j)); err != nil {
-			log.Println("Send() failed", err)
+			logger.Println("Send() failed", err)
 			continue
 		}
 
 		i++
+		success++
 		if i < *batchSize {
 			if err := conn.Flush(); err != nil {
-				log.Println("Flush() failed", err)
+				logger.Println("Flush() failed", err)
 			}
 			i = -1
 			if *verbose {
-				log.Println("Flushing...")
+				logger.Println("Flushing...")
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		logger.Println("Error encountered while reading file", err)
 	}
+
+	// Say good-bye!
+	logger.Println("Done! nfdmp2rds finished successfully.")
+	count, err := redis.Int64(conn.Do("LLEN", redisListKey))
+	if err != nil {
+		logger.Fatalln("LLEN failed:", err)
+	}
+	logger.Printf("List \"%s\" has now %d entries! This import tried to introduce %d entries.\n", redisListKey, count, success)
 }
 
-func pool(server, password string) *redis.Pool {
+func newPool(server, password string) *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -131,9 +146,38 @@ func pool(server, password string) *redis.Pool {
 	}
 }
 
+func openFile(input string) (file *os.File, err error) {
+	if input == "-" {
+		// Discard stdin if it's connected to a terminal. We want it to be
+		// connected to a pipe or a file.
+		info, err := os.Stdin.Stat()
+		if err != nil {
+			return nil, err
+		}
+		if (info.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
+			return nil, errors.New("stdin must be a pipe or a file")
+		}
+		file = os.Stdin
+	} else {
+		file, err = os.Open(input)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return file, nil
+}
+
+func delKey(pool *redis.Pool, key string) (err error) {
+	conn := pool.Get()
+	defer conn.Close()
+	_, err = conn.Do("DEL", key)
+	return err
+}
+
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: nfdmp2rds [options] file\n")
-	fmt.Fprintf(os.Stderr, "Flags:\n")
+	fmt.Fprintf(os.Stderr, "Usage: nfdmp2rds [options] redisListKey file\n")
+	fmt.Fprintf(os.Stderr, "(redisListKey and file mandatory)\n\n")
+	fmt.Fprintf(os.Stderr, "Flags (options):\n")
 	flag.PrintDefaults()
 	os.Exit(2)
 }

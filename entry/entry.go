@@ -29,8 +29,8 @@ const (
 	expectedParts = 24
 )
 
-// Host is exported so it can be customized
-var Host = "localhost"
+// Hostname is exported so it can be customized from main
+var Hostname = "localhost"
 
 // NewNfdumpEntry creates a new NfdumpEntry
 func NewNfdumpEntry(s string) (*NfdumpEntry, error) {
@@ -39,7 +39,7 @@ func NewNfdumpEntry(s string) (*NfdumpEntry, error) {
 		return nil, errors.New("Unrecognized nfdump entry")
 	}
 	e := NfdumpEntry{
-		Host:          Host,
+		Host:          Hostname,
 		InBytes:       parts[23],
 		InPkts:        parts[22],
 		Ipv4SrcAddr:   ip(parts[9]),
@@ -53,17 +53,12 @@ func NewNfdumpEntry(s string) (*NfdumpEntry, error) {
 	return &e, nil
 }
 
-// ip converts the 32-bit integer representation of the IP address into its
-// dotted-decimal notation.
 func ip(s string) string {
-	if i, err := strconv.ParseInt(s, 10, 32); err == nil {
-		return net.IPv4(
-			byte(i>>24),
-			byte(i>>16),
-			byte(i>>8),
-			byte(i)).String()
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return err.Error()
 	}
-	return ""
+	return net.IPv4(byte(i>>24), byte(i>>16), byte(i>>8), byte(i)).String()
 }
 
 func ftime(s string) string {
@@ -71,5 +66,5 @@ func ftime(s string) string {
 	if err != nil {
 		return ""
 	}
-	return time.Unix(i, 0).Format(time.RFC3339)
+	return time.Unix(i, 0).UTC().Format(time.RFC3339)
 }
