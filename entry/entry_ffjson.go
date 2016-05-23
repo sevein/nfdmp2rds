@@ -11,6 +11,308 @@ import (
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
 
+func (mj *GeoIPEntry) MarshalJSON() ([]byte, error) {
+	var buf fflib.Buffer
+	if mj == nil {
+		buf.WriteString("null")
+		return buf.Bytes(), nil
+	}
+	err := mj.MarshalJSONBuf(&buf)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+func (mj *GeoIPEntry) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
+	if mj == nil {
+		buf.WriteString("null")
+		return nil
+	}
+	var err error
+	var obj []byte
+	_ = obj
+	_ = err
+	buf.WriteString(`{ `)
+	if len(mj.IsoCode) != 0 {
+		buf.WriteString(`"iso_code":`)
+		fflib.WriteJsonString(buf, string(mj.IsoCode))
+		buf.WriteByte(',')
+	}
+	if mj.Latitude != 0 {
+		buf.WriteString(`"latitude":`)
+		fflib.AppendFloat(buf, float64(mj.Latitude), 'g', -1, 64)
+		buf.WriteByte(',')
+	}
+	if mj.Longitude != 0 {
+		buf.WriteString(`"longitude":`)
+		fflib.AppendFloat(buf, float64(mj.Longitude), 'g', -1, 64)
+		buf.WriteByte(',')
+	}
+	buf.Rewind(1)
+	buf.WriteByte('}')
+	return nil
+}
+
+const (
+	ffj_t_GeoIPEntrybase = iota
+	ffj_t_GeoIPEntryno_such_key
+
+	ffj_t_GeoIPEntry_IsoCode
+
+	ffj_t_GeoIPEntry_Latitude
+
+	ffj_t_GeoIPEntry_Longitude
+)
+
+var ffj_key_GeoIPEntry_IsoCode = []byte("iso_code")
+
+var ffj_key_GeoIPEntry_Latitude = []byte("latitude")
+
+var ffj_key_GeoIPEntry_Longitude = []byte("longitude")
+
+func (uj *GeoIPEntry) UnmarshalJSON(input []byte) error {
+	fs := fflib.NewFFLexer(input)
+	return uj.UnmarshalJSONFFLexer(fs, fflib.FFParse_map_start)
+}
+
+func (uj *GeoIPEntry) UnmarshalJSONFFLexer(fs *fflib.FFLexer, state fflib.FFParseState) error {
+	var err error = nil
+	currentKey := ffj_t_GeoIPEntrybase
+	_ = currentKey
+	tok := fflib.FFTok_init
+	wantedTok := fflib.FFTok_init
+
+mainparse:
+	for {
+		tok = fs.Scan()
+		//	println(fmt.Sprintf("debug: tok: %v  state: %v", tok, state))
+		if tok == fflib.FFTok_error {
+			goto tokerror
+		}
+
+		switch state {
+
+		case fflib.FFParse_map_start:
+			if tok != fflib.FFTok_left_bracket {
+				wantedTok = fflib.FFTok_left_bracket
+				goto wrongtokenerror
+			}
+			state = fflib.FFParse_want_key
+			continue
+
+		case fflib.FFParse_after_value:
+			if tok == fflib.FFTok_comma {
+				state = fflib.FFParse_want_key
+			} else if tok == fflib.FFTok_right_bracket {
+				goto done
+			} else {
+				wantedTok = fflib.FFTok_comma
+				goto wrongtokenerror
+			}
+
+		case fflib.FFParse_want_key:
+			// json {} ended. goto exit. woo.
+			if tok == fflib.FFTok_right_bracket {
+				goto done
+			}
+			if tok != fflib.FFTok_string {
+				wantedTok = fflib.FFTok_string
+				goto wrongtokenerror
+			}
+
+			kn := fs.Output.Bytes()
+			if len(kn) <= 0 {
+				// "" case. hrm.
+				currentKey = ffj_t_GeoIPEntryno_such_key
+				state = fflib.FFParse_want_colon
+				goto mainparse
+			} else {
+				switch kn[0] {
+
+				case 'i':
+
+					if bytes.Equal(ffj_key_GeoIPEntry_IsoCode, kn) {
+						currentKey = ffj_t_GeoIPEntry_IsoCode
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
+				case 'l':
+
+					if bytes.Equal(ffj_key_GeoIPEntry_Latitude, kn) {
+						currentKey = ffj_t_GeoIPEntry_Latitude
+						state = fflib.FFParse_want_colon
+						goto mainparse
+
+					} else if bytes.Equal(ffj_key_GeoIPEntry_Longitude, kn) {
+						currentKey = ffj_t_GeoIPEntry_Longitude
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
+				}
+
+				if fflib.SimpleLetterEqualFold(ffj_key_GeoIPEntry_Longitude, kn) {
+					currentKey = ffj_t_GeoIPEntry_Longitude
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.SimpleLetterEqualFold(ffj_key_GeoIPEntry_Latitude, kn) {
+					currentKey = ffj_t_GeoIPEntry_Latitude
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_GeoIPEntry_IsoCode, kn) {
+					currentKey = ffj_t_GeoIPEntry_IsoCode
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				currentKey = ffj_t_GeoIPEntryno_such_key
+				state = fflib.FFParse_want_colon
+				goto mainparse
+			}
+
+		case fflib.FFParse_want_colon:
+			if tok != fflib.FFTok_colon {
+				wantedTok = fflib.FFTok_colon
+				goto wrongtokenerror
+			}
+			state = fflib.FFParse_want_value
+			continue
+		case fflib.FFParse_want_value:
+
+			if tok == fflib.FFTok_left_brace || tok == fflib.FFTok_left_bracket || tok == fflib.FFTok_integer || tok == fflib.FFTok_double || tok == fflib.FFTok_string || tok == fflib.FFTok_bool || tok == fflib.FFTok_null {
+				switch currentKey {
+
+				case ffj_t_GeoIPEntry_IsoCode:
+					goto handle_IsoCode
+
+				case ffj_t_GeoIPEntry_Latitude:
+					goto handle_Latitude
+
+				case ffj_t_GeoIPEntry_Longitude:
+					goto handle_Longitude
+
+				case ffj_t_GeoIPEntryno_such_key:
+					err = fs.SkipField(tok)
+					if err != nil {
+						return fs.WrapErr(err)
+					}
+					state = fflib.FFParse_after_value
+					goto mainparse
+				}
+			} else {
+				goto wantedvalue
+			}
+		}
+	}
+
+handle_IsoCode:
+
+	/* handler: uj.IsoCode type=string kind=string quoted=false*/
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			outBuf := fs.Output.Bytes()
+
+			uj.IsoCode = string(string(outBuf))
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Latitude:
+
+	/* handler: uj.Latitude type=float64 kind=float64 quoted=false*/
+
+	{
+		if tok != fflib.FFTok_double && tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for float64", tok))
+		}
+	}
+
+	{
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			tval, err := fflib.ParseFloat(fs.Output.Bytes(), 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			uj.Latitude = float64(tval)
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Longitude:
+
+	/* handler: uj.Longitude type=float64 kind=float64 quoted=false*/
+
+	{
+		if tok != fflib.FFTok_double && tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for float64", tok))
+		}
+	}
+
+	{
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			tval, err := fflib.ParseFloat(fs.Output.Bytes(), 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			uj.Longitude = float64(tval)
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+wantedvalue:
+	return fs.WrapErr(fmt.Errorf("wanted value token, but got token: %v", tok))
+wrongtokenerror:
+	return fs.WrapErr(fmt.Errorf("ffjson: wanted token: %v, but got token: %v output=%s", wantedTok, tok, fs.Output.String()))
+tokerror:
+	if fs.BigError != nil {
+		return fs.WrapErr(fs.BigError)
+	}
+	err = fs.Error.ToError()
+	if err != nil {
+		return fs.WrapErr(err)
+	}
+	panic("ffjson-generated: unreachable, please report bug.")
+done:
+	return nil
+}
+
 func (mj *NfdumpEntry) MarshalJSON() ([]byte, error) {
 	var buf fflib.Buffer
 	if mj == nil {
@@ -32,7 +334,7 @@ func (mj *NfdumpEntry) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	var obj []byte
 	_ = obj
 	_ = err
-	buf.WriteString(`{"host":`)
+	buf.WriteString(`{ "host":`)
 	fflib.WriteJsonString(buf, string(mj.Host))
 	buf.WriteString(`,"in_bytes":`)
 	fflib.WriteJsonString(buf, string(mj.InBytes))
@@ -52,6 +354,38 @@ func (mj *NfdumpEntry) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(mj.FirstSwitched))
 	buf.WriteString(`,"last_switched":`)
 	fflib.WriteJsonString(buf, string(mj.LastSwitched))
+	buf.WriteByte(',')
+	if mj.GeoIPSrc != nil {
+		if true {
+			buf.WriteString(`"geoip_src":`)
+
+			{
+
+				err = mj.GeoIPSrc.MarshalJSONBuf(buf)
+				if err != nil {
+					return err
+				}
+
+			}
+			buf.WriteByte(',')
+		}
+	}
+	if mj.GeoIPDst != nil {
+		if true {
+			buf.WriteString(`"geoip_dst":`)
+
+			{
+
+				err = mj.GeoIPDst.MarshalJSONBuf(buf)
+				if err != nil {
+					return err
+				}
+
+			}
+			buf.WriteByte(',')
+		}
+	}
+	buf.Rewind(1)
 	buf.WriteByte('}')
 	return nil
 }
@@ -79,6 +413,10 @@ const (
 	ffj_t_NfdumpEntry_FirstSwitched
 
 	ffj_t_NfdumpEntry_LastSwitched
+
+	ffj_t_NfdumpEntry_GeoIPSrc
+
+	ffj_t_NfdumpEntry_GeoIPDst
 )
 
 var ffj_key_NfdumpEntry_Host = []byte("host")
@@ -100,6 +438,10 @@ var ffj_key_NfdumpEntry_L4DstPort = []byte("l4_dst_port")
 var ffj_key_NfdumpEntry_FirstSwitched = []byte("first_switched")
 
 var ffj_key_NfdumpEntry_LastSwitched = []byte("last_switched")
+
+var ffj_key_NfdumpEntry_GeoIPSrc = []byte("geoip_src")
+
+var ffj_key_NfdumpEntry_GeoIPDst = []byte("geoip_dst")
 
 func (uj *NfdumpEntry) UnmarshalJSON(input []byte) error {
 	fs := fflib.NewFFLexer(input)
@@ -168,6 +510,19 @@ mainparse:
 						goto mainparse
 					}
 
+				case 'g':
+
+					if bytes.Equal(ffj_key_NfdumpEntry_GeoIPSrc, kn) {
+						currentKey = ffj_t_NfdumpEntry_GeoIPSrc
+						state = fflib.FFParse_want_colon
+						goto mainparse
+
+					} else if bytes.Equal(ffj_key_NfdumpEntry_GeoIPDst, kn) {
+						currentKey = ffj_t_NfdumpEntry_GeoIPDst
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
 				case 'h':
 
 					if bytes.Equal(ffj_key_NfdumpEntry_Host, kn) {
@@ -225,6 +580,18 @@ mainparse:
 						goto mainparse
 					}
 
+				}
+
+				if fflib.EqualFoldRight(ffj_key_NfdumpEntry_GeoIPDst, kn) {
+					currentKey = ffj_t_NfdumpEntry_GeoIPDst
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_NfdumpEntry_GeoIPSrc, kn) {
+					currentKey = ffj_t_NfdumpEntry_GeoIPSrc
+					state = fflib.FFParse_want_colon
+					goto mainparse
 				}
 
 				if fflib.EqualFoldRight(ffj_key_NfdumpEntry_LastSwitched, kn) {
@@ -333,6 +700,12 @@ mainparse:
 
 				case ffj_t_NfdumpEntry_LastSwitched:
 					goto handle_LastSwitched
+
+				case ffj_t_NfdumpEntry_GeoIPSrc:
+					goto handle_GeoIPSrc
+
+				case ffj_t_NfdumpEntry_GeoIPDst:
+					goto handle_GeoIPDst
 
 				case ffj_t_NfdumpEntryno_such_key:
 					err = fs.SkipField(tok)
@@ -603,6 +976,60 @@ handle_LastSwitched:
 			uj.LastSwitched = string(string(outBuf))
 
 		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_GeoIPSrc:
+
+	/* handler: uj.GeoIPSrc type=entry.GeoIPEntry kind=struct quoted=false*/
+
+	{
+		if tok == fflib.FFTok_null {
+
+			uj.GeoIPSrc = nil
+
+			state = fflib.FFParse_after_value
+			goto mainparse
+		}
+
+		if uj.GeoIPSrc == nil {
+			uj.GeoIPSrc = new(GeoIPEntry)
+		}
+
+		err = uj.GeoIPSrc.UnmarshalJSONFFLexer(fs, fflib.FFParse_want_key)
+		if err != nil {
+			return err
+		}
+		state = fflib.FFParse_after_value
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_GeoIPDst:
+
+	/* handler: uj.GeoIPDst type=entry.GeoIPEntry kind=struct quoted=false*/
+
+	{
+		if tok == fflib.FFTok_null {
+
+			uj.GeoIPDst = nil
+
+			state = fflib.FFParse_after_value
+			goto mainparse
+		}
+
+		if uj.GeoIPDst == nil {
+			uj.GeoIPDst = new(GeoIPEntry)
+		}
+
+		err = uj.GeoIPDst.UnmarshalJSONFFLexer(fs, fflib.FFParse_want_key)
+		if err != nil {
+			return err
+		}
+		state = fflib.FFParse_after_value
 	}
 
 	state = fflib.FFParse_after_value

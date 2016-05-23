@@ -4,3 +4,7 @@ import:
 - package: github.com/pquerna/ffjson
   subpackages:
   - ffjson
+- package: github.com/oschwald/maxminddb-golang
+- package: golang.org/x/sys
+  subpackages:
+  - unix

@@ -10,13 +10,13 @@ func TestMarshal(t *testing.T) {
 	}{
 		{
 			"localhost",
-			"2|1463425844|692|1463425855|188|6|0|0|0|3232235777|443|0|0|0|3232235778|57145|64512|12357|39|41|0|0|10|5256",
-			`{"host":"localhost","in_bytes":"5256","in_pkts":"10","ipv4_src_addr":"192.168.1.1","ipv4_dst_addr":"192.168.1.2","protocol":"6","l4_src_port":"443","l4_dst_port":"57145","first_switched":"2016-05-16T19:10:44Z","last_switched":"2016-05-16T19:10:55Z"}`,
+			"2|1463425844|692|1463425855|188|6|0|0|0|2386192149|443|0|0|0|3641448481|57145|64512|12357|39|41|0|0|10|5256",
+			`{ "host":"localhost","in_bytes":"5256","in_pkts":"10","ipv4_src_addr":"142.58.103.21","ipv4_dst_addr":"217.12.24.33","protocol":"6","l4_src_port":"443","l4_dst_port":"57145","first_switched":"2016-05-16T19:10:44Z","last_switched":"2016-05-16T19:10:55Z","geoip_src":{ "iso_code":"CA"},"geoip_dst":{ "iso_code":"ES"}}`,
 		},
 		{
 			"different.hostname.tld",
-			"2|1463425829|17|1463425834|5|6|0|0|0|3232235777|179|0|0|0|3232235778|11482|0|0|39|0|24|0|2|99",
-			`{"host":"different.hostname.tld","in_bytes":"99","in_pkts":"2","ipv4_src_addr":"192.168.1.1","ipv4_dst_addr":"192.168.1.2","protocol":"6","l4_src_port":"179","l4_dst_port":"11482","first_switched":"2016-05-16T19:10:29Z","last_switched":"2016-05-16T19:10:34Z"}`,
+			"2|1463425829|17|1463425834|5|6|0|0|0|2386192149|179|0|0|0|3641448481|11482|0|0|39|0|24|0|2|99",
+			`{ "host":"different.hostname.tld","in_bytes":"99","in_pkts":"2","ipv4_src_addr":"142.58.103.21","ipv4_dst_addr":"217.12.24.33","protocol":"6","l4_src_port":"179","l4_dst_port":"11482","first_switched":"2016-05-16T19:10:29Z","last_switched":"2016-05-16T19:10:34Z","geoip_src":{ "iso_code":"CA"},"geoip_dst":{ "iso_code":"ES"}}`,
 		},
 	}
 	for _, tt := range tests {
@@ -38,9 +38,13 @@ func TestIp(t *testing.T) {
 		{"3627729233", "216.58.193.81"},
 	}
 	for _, tt := range tests {
-		actual := ip(tt.input)
-		if actual != tt.expec {
-			t.Errorf("ip(%s): expected %s, actual %s", tt.input, tt.expec, actual)
+		actual, err := strlong2ip(tt.input)
+		if err != nil {
+			t.Error(err)
+		}
+		ipv4 := actual.String()
+		if ipv4 != tt.expec {
+			t.Errorf("ip(%s): expected %s, actual %s", tt.input, tt.expec, ipv4)
 		}
 	}
 }
