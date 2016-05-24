@@ -3,7 +3,9 @@
 package geoip
 
 import (
+	"fmt"
 	"net"
+	"time"
 
 	maxmind "github.com/oschwald/maxminddb-golang"
 )
@@ -35,4 +37,15 @@ func Geo(ip net.IP) (*Geodata, error) {
 	var record Geodata
 	err := reader.Lookup(ip, &record)
 	return &record, err
+}
+
+// Info returns a string with information about the current database.
+func Info() string {
+	m := reader.Metadata
+
+	return fmt.Sprintf("%s %d.%d (%s)",
+		m.Description["en"],
+		m.BinaryFormatMajorVersion,
+		m.BinaryFormatMinorVersion,
+		time.Unix(int64(m.BuildEpoch), 0).UTC().Format(time.RFC822))
 }

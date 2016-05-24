@@ -4,12 +4,21 @@ package entry
 
 import (
 	"errors"
+	"flag"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sevein/nfdmp2rds/geoip"
+)
+
+var (
+	// NoGeo lets the user decide if they want to use the geographic database.
+	NoGeo = flag.Bool("nogeo", false, "Do not use geographic database")
+
+	// Hostname is used in the JSON document.
+	Hostname = flag.String("hostname", "localhost", "Given hostname")
 )
 
 // NfdumpEntry represents a nfdump entry
@@ -40,9 +49,6 @@ const (
 	expectedParts = 24
 )
 
-// Hostname is exported so it can be customized from main
-var Hostname = "localhost"
-
 // NewNfdumpEntry creates a new NfdumpEntry
 func NewNfdumpEntry(s string) (*NfdumpEntry, error) {
 	parts := strings.Split(s, delim)
@@ -51,7 +57,7 @@ func NewNfdumpEntry(s string) (*NfdumpEntry, error) {
 	}
 
 	e := NfdumpEntry{
-		Host:          Hostname,
+		Host:          *Hostname,
 		InBytes:       parts[23],
 		InPkts:        parts[22],
 		Protocol:      parts[5],
@@ -61,43 +67,43 @@ func NewNfdumpEntry(s string) (*NfdumpEntry, error) {
 		LastSwitched:  ftime(parts[3]),
 	}
 
-	var err error
+	if !*NoGeo {
+		ipv4Src, err := strlong2ip(parts[9])
+		if err != nil {
+			return nil, errors.New("Unrecognized IP address")
+		}
+		e.Ipv4SrcAddr = ipv4Src.String()
 
-	ipv4Src, err := strlong2ip(parts[9])
-	if err != nil {
-		return nil, errors.New("Unrecognized IP address")
-	}
-	e.Ipv4SrcAddr = ipv4Src.String()
+		if geo, err := geoip.Geo(ipv4Src); err == nil {
+			e.GeoIPSrc = &GeoIPEntry{}
+			if geo.Country.IsoCode != "" {
+				e.GeoIPSrc.IsoCode = geo.Country.IsoCode
+			}
+			if geo.Location.Longitude != 0 {
+				e.GeoIPSrc.Longitude = geo.Location.Longitude
+			}
+			if geo.Location.Latitude != 0 {
+				e.GeoIPSrc.Latitude = geo.Location.Latitude
+			}
+		}
 
-	if geo, err := geoip.Geo(ipv4Src); err == nil {
-		e.GeoIPSrc = &GeoIPEntry{}
-		if geo.Country.IsoCode != "" {
-			e.GeoIPSrc.IsoCode = geo.Country.IsoCode
+		ipv4Dst, err := strlong2ip(parts[14])
+		if err != nil {
+			return nil, errors.New("Unrecognized IP address")
 		}
-		if geo.Location.Longitude != 0 {
-			e.GeoIPSrc.Longitude = geo.Location.Longitude
-		}
-		if geo.Location.Latitude != 0 {
-			e.GeoIPSrc.Latitude = geo.Location.Latitude
-		}
-	}
+		e.Ipv4DstAddr = ipv4Dst.String()
 
-	ipv4Dst, err := strlong2ip(parts[14])
-	if err != nil {
-		return nil, errors.New("Unrecognized IP address")
-	}
-	e.Ipv4DstAddr = ipv4Dst.String()
-
-	if geo, err := geoip.Geo(ipv4Dst); err == nil {
-		e.GeoIPDst = &GeoIPEntry{}
-		if geo.Country.IsoCode != "" {
-			e.GeoIPDst.IsoCode = geo.Country.IsoCode
-		}
-		if geo.Location.Longitude != 0 {
-			e.GeoIPDst.Longitude = geo.Location.Longitude
-		}
-		if geo.Location.Latitude != 0 {
-			e.GeoIPDst.Latitude = geo.Location.Latitude
+		if geo, err := geoip.Geo(ipv4Dst); err == nil {
+			e.GeoIPDst = &GeoIPEntry{}
+			if geo.Country.IsoCode != "" {
+				e.GeoIPDst.IsoCode = geo.Country.IsoCode
+			}
+			if geo.Location.Longitude != 0 {
+				e.GeoIPDst.Longitude = geo.Location.Longitude
+			}
+			if geo.Location.Latitude != 0 {
+				e.GeoIPDst.Latitude = geo.Location.Latitude
+			}
 		}
 	}
 
