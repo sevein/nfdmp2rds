@@ -218,14 +218,14 @@ func digester(done <-chan struct{}, lines <-chan string, c chan<- error) {
 
 	for line := range lines {
 		select {
-		case c <- rpush(line, &pushed, conn):
+		case c <- push(line, &pushed, conn):
 		case <-done:
 			return
 		}
 	}
 }
 
-func rpush(line string, pushed *int, conn redis.Conn) error {
+func push(line string, pushed *int, conn redis.Conn) error {
 	e, err := entry.NewNfdumpEntry(line)
 	if err != nil {
 		return err
@@ -236,7 +236,7 @@ func rpush(line string, pushed *int, conn redis.Conn) error {
 		return err
 	}
 
-	if err := conn.Send("RPUSH", redisListKey, string(j)); err != nil {
+	if err := conn.Send("LPUSH", redisListKey, string(j)); err != nil {
 		return err
 	}
 
